@@ -8,6 +8,7 @@
 https://utaharch.blogspot.com/2013/11/a-dram-refresh-tutorial.html
 https://electronics.stackexchange.com/a/454717/279031
 https://my.eng.utah.edu/~cs7810/pres/11-7810-12.pdf (page 3 in particular)
+https://www.micron.com/-/media/client/global/documents/products/data-sheet/dram/ddr4/16gb_ddr4_sdram.pdf
 
 #### What is a DRAM Refresh
 
