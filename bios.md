@@ -1,7 +1,13 @@
 
+## People
+
+- Group of 5 or 6 questions
+- 
 ## Memory Settings
 
 ### Dram Refresh Delay
+
+TODO - Used to mitigate row hammer - waiting on details
 
 #### Original Sources
 
@@ -9,6 +15,7 @@ https://utaharch.blogspot.com/2013/11/a-dram-refresh-tutorial.html
 https://electronics.stackexchange.com/a/454717/279031
 https://my.eng.utah.edu/~cs7810/pres/11-7810-12.pdf (page 3 in particular)
 https://www.micron.com/-/media/client/global/documents/products/data-sheet/dram/ddr4/16gb_ddr4_sdram.pdf
+https://en.wikipedia.org/wiki/Row_hammer - This is maybe the reason this exists?
 
 #### What is a DRAM Refresh
 
@@ -18,7 +25,7 @@ The charge on a DRAM cell weakens over time.  The DDR standard requires every ce
 
 Upon receiving a refresh command, the DRAM chips enter a refresh mode that has been carefully designed to perform the maximum amount of cell refresh in as little time as possible.  During this time, the current carrying capabilities of the power delivery network and the charge pumps are stretched to the limit.  The operation lasts for a time referred to as the refresh cycle time, tRFC.  Towards the end of this period, the refresh process starts to wind down and some recovery time is provisioned so that the banks can be precharged and charge is restored to the charge pumps.  Providing this recovery time at the end allows the memory controller to resume normal operation at the end of tRFC.  Without this recovery time, the memory controller would require a new set of timing constraints that allow it to gradually ramp up its operations in parallel with charge pump restoration.  Since such complexity can't be expected of every memory controller, the DDR standards include the recovery time in the tRFC specification.  As soon as the tRFC time elapses, the memory controller can issue four consecutive Activate commands to different banks in the rank.
 
-#### Refresh penalty
+ #### Refresh penalty
 
 On average, in every tREFI window, the rank is unavailable for a time equal to tRFC.  So for a memory-bound application on a 1-rank memory system, the percentage of execution time that can be attributed to refresh (the refresh penalty) is tRFC/tREFI.  In reality, the refresh penalty can be a little higher because directly prior to the refresh operation, the memory controller wastes some time precharging all the banks.  Also, right after the refresh operation, since all rows are closed, the memory controller has to issue a few Activates to re-populate the row buffers.  These added delays can grow the refresh penalty from (say) 8% in a 32 Gb chip to 9%.  The refresh penalty can also be lower than the tRFC/tREFI ratio if the processors can continue to execute independent instructions in their reorder buffers while the memory system is unavailable.  In a multi-rank memory system, the refresh penalty depends on whether ranks are refreshed together or in a staggered manner.  If ranks are refreshed together, the refresh penalty, as above, is in the neighborhood of tRFC/tREFI.  If ranks are refreshed in a staggered manner, the refresh penalty can be greater.  Staggered refresh is frequently employed because it reduces the memory's peak power requirement.
 
@@ -31,7 +38,23 @@ What does this mean?
 
 ### Memory Interleaving
 
-TODO - need to bring in docs
+#### What is Memory Interleaving
+
+The memory interleave size is the amount of data written/read to a single memory channel before the CPU moves to the next channel.  This is done through memory addressing, so that addresses are mapped to certain channels based on the setting.  If you wrote a 1K byte block with the interleave size set to 256 bytes, that data would be spread across 4 difference memory channels/DIMMs.  If you had the setting at 2K bytes, that data would all end up on a single DIMM.
+
+#### Interleaving on AMD vs Intel
+
+In current gen processors, at time of writing Dell 15G Milan (AMD)/Icelake (Intel), there is a significant difference between AMD and Intel. AMD includes a setting called NUMAs per Core
+
+
+
+#### When would one value of Memory Interleave Size be chosen versus another? 
+
+In general, you should leave the memory interleave size at 256 bytes.  We don’t know of any real-world workloads where it makes a significant difference.
+
+TODO - specifics?
+
+You could see a difference in synthetic workloads that only use a small address range for their testing.  For example, if only 1K of data is accessed you would be MUCH better off with the 256 byte interleaving than the 2K setting in the example above.
 
 ### Opportunistic Self Refresh
 
