@@ -1,8 +1,4 @@
 
-## People
-
-- Group of 5 or 6 questions
-- 
 ## Memory Settings
 
 ### Dram Refresh Delay
@@ -44,7 +40,14 @@ The memory interleave size is the amount of data written/read to a single memory
 
 #### Interleaving on AMD vs Intel
 
-In current gen processors, at time of writing Dell 15G Milan (AMD)/Icelake (Intel), there is a significant difference between AMD and Intel. AMD includes a setting called NUMAs per Core
+In current gen processors, at time of writing Dell 15G Milan (AMD)/Icelake (Intel), there is a significant difference between AMD and Intel. AMD includes a setting called [NUMAs Per Core (NPS)](./resources/pdfs/56338_1.00_pub.pdf) which affects interleaving. When NPS is anything more than 1 instead of distributing each increment of the interleave size across different channels it will move between each of the NUMA nodes and channels.
+
+NPS is not a consideration on Intel servers.
+
+#### What should you pick?
+
+##### AMD
+If you are looking to maximize performance, first it is key to populate 
 
 
 
