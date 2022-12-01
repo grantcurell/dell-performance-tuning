@@ -1,4 +1,6 @@
+## Equipment Used
 
+This guide was written for an R7525 with a Milan processor.
 ## Memory Settings
 
 ### Dram Refresh Delay
@@ -40,14 +42,17 @@ The memory interleave size is the amount of data written/read to a single memory
 
 #### Interleaving on AMD vs Intel
 
-In current gen processors, at time of writing Dell 15G Milan (AMD)/Icelake (Intel), there is a significant difference between AMD and Intel. AMD includes a setting called [NUMAs Per Core (NPS)](./resources/pdfs/56338_1.00_pub.pdf) which affects interleaving. When NPS is anything more than 1 instead of distributing each increment of the interleave size across different channels it will move between each of the NUMA nodes and channels.
+In current gen processors, at time of writing Dell 15G Milan (AMD)/Icelake (Intel), there is a significant difference between AMD and Intel. AMD includes a setting called [NUMAs Per Core (NPS)](resources/pdfs/56338_1.00_pub.pdf) which affects interleaving. When NPS is anything more than 1 instead of distributing each increment of the interleave size across different channels it will move between each of the NUMA nodes and channels.
 
 NPS is not a consideration on Intel servers.
 
-#### What should you pick?
+#### Optimizing AMD
 
-##### AMD
-If you are looking to maximize performance, first it is key to populate 
+[AMD's Guidelines on Memory Population](resources/pdfs/56873_0.80_PUB.pdf)
+
+If you are looking to maximize performance, first it is key to populate all 16 DIMMs. AMD processors each have 8 channels and each channel may contain two DIMMs. You can think of interleaving as a sort of load balancing and as with most load balancing scenarios the more you spread the load the faster it goes. Subsequently, if you're looking for maximum performance here having 16 DIMMs is optimum. Equally important is making sure that all memory is the same size.
+
+An exhaustive list of the memory configurations are available in [the guidelines](resources/pdfs/56873_0.80_PUB.pdf). 
 
 
 
