@@ -1,38 +1,87 @@
+# BIOS Settings
+
+- [BIOS Settings](#bios-settings)
+  - [Equipment Used](#equipment-used)
+  - [Memory Settings](#memory-settings)
+    - [Dram Refresh Delay](#dram-refresh-delay)
+      - [How DRAM is Organized](#how-dram-is-organized)
+      - [What is a DRAM Refresh](#what-is-a-dram-refresh)
+      - [tRFC and recovery time](#trfc-and-recovery-time)
+      - [Setting Explanation](#setting-explanation)
+    - [Memory Operating Mode](#memory-operating-mode)
+    - [Memory Interleaving](#memory-interleaving)
+      - [What is Memory Interleaving](#what-is-memory-interleaving)
+      - [Interleaving on AMD vs Intel](#interleaving-on-amd-vs-intel)
+      - [Optimizing AMD](#optimizing-amd)
+      - [When would one value of Memory Interleave Size be chosen versus another?](#when-would-one-value-of-memory-interleave-size-be-chosen-versus-another)
+    - [Correctable Memory ECC SMI](#correctable-memory-ecc-smi)
+    - [Opportunistic Self Refresh](#opportunistic-self-refresh)
+    - [DIMM Self Healing (Post Package Repair) on Uncorrectable Memory Error](#dimm-self-healing-post-package-repair-on-uncorrectable-memory-error)
+  - [Processor Settings](#processor-settings)
+    - [Logical Processor](#logical-processor)
+    - [IOMMU Support](#iommu-support)
+    - [Kernel DMA Protection](#kernel-dma-protection)
+    - [L1 Stream HW Prefetcher](#l1-stream-hw-prefetcher)
+    - [L2 Stream HW Prefetcher](#l2-stream-hw-prefetcher)
+    - [MADT Core Enumeration](#madt-core-enumeration)
+    - [NUMA Nodes Per Socket](#numa-nodes-per-socket)
+    - [Minimum SEV non-ES ASID](#minimum-sev-non-es-asid)
+    - [Transparent Secure Memory Encryption](#transparent-secure-memory-encryption)
+    - [Configurable TDP](#configurable-tdp)
+    - [x2APIC Mode](#x2apic-mode)
+    - [Number of CCDs per Processor](#number-of-ccds-per-processor)
+    - [Number of Cores per CCD](#number-of-cores-per-ccd)
+
+
 ## Equipment Used
 
 This guide was written for an R7525 with a Milan processor.
+
 ## Memory Settings
 
 ### Dram Refresh Delay
 
-TODO - Used to mitigate row hammer - waiting on details
+This setting exists due to the [Row Hammer](https://en.wikipedia.org/wiki/Row_hammer) attack. To fully understand the explanation, it is important to first understand some memory concepts.
 
-#### Original Sources
+#### How DRAM is Organized
 
-https://utaharch.blogspot.com/2013/11/a-dram-refresh-tutorial.html
-https://electronics.stackexchange.com/a/454717/279031
-https://my.eng.utah.edu/~cs7810/pres/11-7810-12.pdf (page 3 in particular)
-https://www.micron.com/-/media/client/global/documents/products/data-sheet/dram/ddr4/16gb_ddr4_sdram.pdf
-https://en.wikipedia.org/wiki/Row_hammer - This is maybe the reason this exists?
+[This Stack Exchange post](https://electronics.stackexchange.com/a/454717/279031) does a good job explaining the difference between a DRAM rank and channel. [Page 3 of this lecture](https://my.eng.utah.edu/~cs7810/pres/11-7810-12.pdf) from the University of Utah provides a visual of DRAM organization.
 
 #### What is a DRAM Refresh
 
-The charge on a DRAM cell weakens over time.  The DDR standard requires every cell to be refreshed within a 64 ms interval, referred to as the retention time.  At temperatures higher than 85° C (referred to as extended temperature range), the retention time is halved to 32 ms to account for the higher leakage rate.  The refresh of a memory rank is partitioned into 8,192 smaller refresh operations.  One such refresh operation has to be issued every 7.8 µs (64 ms/8192).  This 7.8 µs interval is referred to as the refresh interval, tREFI.  The DDR3 standard requires that eight refresh operations be issued within a time window equal to 8 x tREFI, giving the memory controller some flexibility when scheduling these refresh operations.  Refresh operations are issued at rank granularity in DDR3 and DDR4.  Before issuing a refresh operation, the memory controller precharges all banks in the rank.  It then issues a single refresh command to the rank.  DRAM chips maintain a row counter to keep track of the last row that was refreshed -- this row counter is used to determine the rows that must be refreshed next.
+Source: https://utaharch.blogspot.com/2013/11/a-dram-refresh-tutorial.html
+
+> The charge on a DRAM cell weakens over time.  The DDR standard requires every cell to be refreshed within a 64 ms interval, referred to as the retention time.  At temperatures higher than 85° C (referred to as extended temperature range), the retention time is halved to 32 ms to account for the higher leakage rate.  The refresh of a memory rank is partitioned into 8,192 smaller refresh operations.  One such refresh operation has to be issued every 7.8 µs (64 ms/8192).  This 7.8 µs interval is referred to as the refresh interval, tREFI.  The DDR3 standard requires that eight refresh operations be issued within a time window equal to 8 x tREFI, giving the memory controller some flexibility when scheduling these refresh operations.  Refresh operations are issued at rank granularity in DDR3 and DDR4.  Before issuing a refresh operation, the memory controller precharges all banks in the rank.  It then issues a single refresh command to the rank.  DRAM chips maintain a row counter to keep track of the last row that was refreshed -- this row counter is used to determine the rows that must be refreshed next.
 
 #### tRFC and recovery time
 
-Upon receiving a refresh command, the DRAM chips enter a refresh mode that has been carefully designed to perform the maximum amount of cell refresh in as little time as possible.  During this time, the current carrying capabilities of the power delivery network and the charge pumps are stretched to the limit.  The operation lasts for a time referred to as the refresh cycle time, tRFC.  Towards the end of this period, the refresh process starts to wind down and some recovery time is provisioned so that the banks can be precharged and charge is restored to the charge pumps.  Providing this recovery time at the end allows the memory controller to resume normal operation at the end of tRFC.  Without this recovery time, the memory controller would require a new set of timing constraints that allow it to gradually ramp up its operations in parallel with charge pump restoration.  Since such complexity can't be expected of every memory controller, the DDR standards include the recovery time in the tRFC specification.  As soon as the tRFC time elapses, the memory controller can issue four consecutive Activate commands to different banks in the rank.
+Source: https://utaharch.blogspot.com/2013/11/a-dram-refresh-tutorial.html
 
- #### Refresh penalty
+> Upon receiving a refresh command, the DRAM chips enter a refresh mode that has been carefully designed to perform the maximum amount of cell refresh in as little time as possible.  During this time, the current carrying capabilities of the power delivery network and the charge pumps are stretched to the limit.  The operation lasts for a time referred to as the refresh cycle time, tRFC.  Towards the end of this period, the refresh process starts to wind down and some recovery time is provisioned so that the banks can be precharged and charge is restored to the charge pumps.  Providing this recovery time at the end allows the memory controller to resume normal operation at the end of tRFC.  Without this recovery time, the memory controller would require a new set of timing constraints that allow it to gradually ramp up its operations in parallel with charge pump restoration.  Since such complexity can't be expected of every memory controller, the DDR standards include the recovery time in the tRFC specification.  As soon as the tRFC time elapses, the memory controller can issue four consecutive Activate commands to different banks in the rank.
+
+#### Setting Explanation
 
 On average, in every tREFI window, the rank is unavailable for a time equal to tRFC.  So for a memory-bound application on a 1-rank memory system, the percentage of execution time that can be attributed to refresh (the refresh penalty) is tRFC/tREFI.  In reality, the refresh penalty can be a little higher because directly prior to the refresh operation, the memory controller wastes some time precharging all the banks.  Also, right after the refresh operation, since all rows are closed, the memory controller has to issue a few Activates to re-populate the row buffers.  These added delays can grow the refresh penalty from (say) 8% in a 32 Gb chip to 9%.  The refresh penalty can also be lower than the tRFC/tREFI ratio if the processors can continue to execute independent instructions in their reorder buffers while the memory system is unavailable.  In a multi-rank memory system, the refresh penalty depends on whether ranks are refreshed together or in a staggered manner.  If ranks are refreshed together, the refresh penalty, as above, is in the neighborhood of tRFC/tREFI.  If ranks are refreshed in a staggered manner, the refresh penalty can be greater.  Staggered refresh is frequently employed because it reduces the memory's peak power requirement.
 
+Every time a row in DRAM is refreshed, it ‘wipes the slate clean’ in terms of Rowhammer induced electrical disturbances. However, when a DRAM row is being refreshed, it cannot be accessed to read/write data – so it is momentarily offline. The JEDEC specification for DDR4 and DDR5 allows the CPU memory controller to postpone sending DRAM refreshes. The memory controller is required to ‘catch up’ in refreshes at a later time. The theory is that some workloads may see additional performance benefits by ‘squeezing in’ read/write transactions during the window where refreshes is not occurring.
+
+In this timing diagram below, you can see there is a window where refresh is postponed (and later caught-up by sending a burst of refreshes). The theory on RH mitigation is that the window you see below allows a ‘window of opportunity’ for Row Hammer attackers to induce bitflips. ‘Performance mode’ of the Dram Refresh Delay setting allows the memory controller to do this postponing.
+
+![](images/2022-12-01-06-00-44.png)
+ 
+By changing the BIOS setting mentioned, it forces the memory controller to send refreshes at regular intervals. Therefore, the ‘window of opportunity’ closes.
+
+![](images/2022-12-01-06-01-28.png)
+
+Dell's testing has showed that there is <1% performance benefit to allowing refresh postponed. Subsequently, starting in 15G, Dell started disabling refresh postponing/delay by default.
 
 ### Memory Operating Mode
 
-> the DRAM controllers operate independently in 64-bit mode and provide optimized memory performance.
+> This field selects the memory operating mode. This feature is active only if a valid memory configuration is detected. When Optimizer Mode is enabled, the DRAM controllers operate independently in 64-bit mode and provide optimized memory performance.
 
-What does this mean?
+Questions:
+- What are the valid memory configurations?
+- What does it mean for DRAM controllers to operate independently in 64-bit mode
 
 ### Memory Interleaving
 
@@ -54,8 +103,6 @@ If you are looking to maximize performance, first it is key to populate all 16 D
 
 An exhaustive list of the memory configurations are available in [the guidelines](resources/pdfs/56873_0.80_PUB.pdf). 
 
-
-
 #### When would one value of Memory Interleave Size be chosen versus another? 
 
 In general, you should leave the memory interleave size at 256 bytes.  We don’t know of any real-world workloads where it makes a significant difference.
@@ -63,6 +110,10 @@ In general, you should leave the memory interleave size at 256 bytes.  We don’
 TODO - specifics?
 
 You could see a difference in synthetic workloads that only use a small address range for their testing.  For example, if only 1K of data is accessed you would be MUCH better off with the 256 byte interleaving than the 2K setting in the example above.
+
+### Correctable Memory ECC SMI
+
+Allows the system to log ECC corrected DRAM errors into the System Event Log (SEL) log. Logging these rare errors can help identify marginal components; however the system will pause for a few milliseconds after an error while the log entry is created. Latency conscious customers may wish to disable the feature. Spare Mode, and Mirror mode require this feature to be enabled.
 
 ### Opportunistic Self Refresh
 
