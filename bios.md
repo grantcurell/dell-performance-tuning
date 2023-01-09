@@ -187,8 +187,7 @@ TODO - How do I know when I'm in those scenarios
 
 ### IOMMU Support
 
-TODO - what is it?
-Why is this fixed?
+The IOMMU is required to support Direct Memory Access (DMA). Unless you have a use-case specific reason, this is best left on. On AMD systems, it enables the IVRS ACPI table used to support DMA for VMs.
 
 ### Kernel DMA Protection
 
