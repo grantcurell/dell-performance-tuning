@@ -100,12 +100,7 @@ From a performance tuning standpoint, our experience shows us that this setting 
 
 > This field selects the memory operating mode. This feature is active only if a valid memory configuration is detected. When Optimizer Mode is enabled, the DRAM controllers operate independently in 64-bit mode and provide optimized memory performance.
 
-Questions:
-- What are the valid memory configurations to unlock this setting? (It's locked on the R7525)
-  - Is this because the other settings are for a Memory Controller Hub (MCH)? https://serverfault.com/questions/387736/should-i-use-bios-advanced-ecc-in-dell-poweredge-r710-bios-with-ecc-dimms
-  - It is active on the R440
-- What does it mean for DRAM controllers to operate independently in 64-bit mode
-- Can we find out who wrote this and what data they used: https://infohub.delltechnologies.com/l/day-three-best-practices-6/poweredge-memory-operating-mode-1
+On AMD platforms this memory setting is not applicable. On Intel platforms the memory operating mode field allows you to enable memory mirroring, fault resilient memory (FRM) mode, or use memory sparing. These features aren't currently on AMD platform but the setting is still present in the BIOS (though locked).
 
 ### Memory Interleaving
 
@@ -159,9 +154,7 @@ Leave this to disabled.
 
 ### Opportunistic Self Refresh
 
-[TODO need to study](https://infohub.delltechnologies.com/l/day-three-best-practices-8/poweredge-dram-refresh-delay-and-opportunistic-self-refresh)
-
-TODO: I noticed this isn't present on Milan.
+Only applies to Intel. Can be ignored on AMD servers and on newer servers should not be present at all.
 
 ### DIMM Self Healing (Post Package Repair) on Uncorrectable Memory Error
 
@@ -190,7 +183,7 @@ In what specific scenarios would it be worth disabling? The help says:
 
 > However, there are some floating point/scientific workloads, including HPC workloads, where disabling this feature may result in higher performance.
 
-How do I know when I'm in those scenarios
+TODO - How do I know when I'm in those scenarios
 
 ### IOMMU Support
 
