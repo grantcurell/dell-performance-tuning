@@ -187,11 +187,11 @@ TODO - How do I know when I'm in those scenarios
 
 ### IOMMU Support
 
-The IOMMU is required to support Direct Memory Access (DMA). Unless you have a use-case specific reason, this is best left on. On AMD systems, it enables the IVRS ACPI table used to support DMA for VMs.
+The IOMMU is required to support Direct Memory Access (DMA). Unless you have a use-case specific reason, this is best left on. On AMD systems, it enables the [IVRS ACPI table](https://www.amd.com/system/files/TechDocs/48882_3.07_PUB.pdf) used to support DMA for VMs.
 
 ### Kernel DMA Protection
 
-TODO: https://learn.microsoft.com/en-us/windows/security/information-protection/kernel-dma-protection-for-thunderbolt
+This is there to protect against [DMA Attacks](https://en.wikipedia.org/wiki/DMA_attack). Originally, PCIe devices were entirely external and usually required a reboot to enable. However, in modern computers you often have things like Thunderbolt. An attacker can plug in a Thunderbolt device and then use DMA to read arbitrary memory. [Kernel DMA Protection](https://learn.microsoft.com/en-us/windows/security/information-protection/kernel-dma-protection-for-thunderbolt) protects against this by rejecting any devices which don't support memory access protection. This is done by the IOMMU and it effectively forces the device to honor memory access protection in order to function. With memory access protection the device is only allowed to access its own memory space.
 
 ### L1 Stream HW Prefetcher
 
