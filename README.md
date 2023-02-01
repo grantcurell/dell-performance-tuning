@@ -2,9 +2,22 @@
 
 - [Dell Performance Tuning Whitepaper](#dell-performance-tuning-whitepaper)
   - [BIOS](#bios)
+  - [Operating System](#operating-system)
+  - [Hardware Considerations](#hardware-considerations)
+  - [PERC](#perc)
 
 ## BIOS
 
+[BIOS Performance Tuning](./bios.md)
+
+## Operating System
+
 TODO
 
-[Link](./bios.md)
+## Hardware Considerations
+
+TODO
+
+## PERC
+
+TODO

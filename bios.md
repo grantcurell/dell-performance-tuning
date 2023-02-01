@@ -28,8 +28,9 @@
     - [Logical Processor](#logical-processor)
     - [IOMMU Support](#iommu-support)
     - [Kernel DMA Protection](#kernel-dma-protection)
-    - [L1 Stream HW Prefetcher](#l1-stream-hw-prefetcher)
-    - [L2 Stream HW Prefetcher](#l2-stream-hw-prefetcher)
+    - [Prefetching](#prefetching)
+      - [L1 Stream HW Prefetcher](#l1-stream-hw-prefetcher)
+      - [L2 Stream HW Prefetcher](#l2-stream-hw-prefetcher)
     - [MADT Core Enumeration](#madt-core-enumeration)
     - [NUMA Nodes Per Socket](#numa-nodes-per-socket)
     - [Minimum SEV non-ES ASID](#minimum-sev-non-es-asid)
@@ -179,11 +180,7 @@ Leave this enabled. It will only run when an uncorrectable memory error occurs w
 
 ### Logical Processor
 
-In what specific scenarios would it be worth disabling? The help says:
-
-> However, there are some floating point/scientific workloads, including HPC workloads, where disabling this feature may result in higher performance.
-
-TODO - How do I know when I'm in those scenarios
+This controls hyper threading/simultaneous multithreading (SMT). Many years ago there was wisdom saying that you should turn off SMT because the performance benefits were minimal and operating systems would schedule tasks on logical cores instead of available physical cores. With time all major operating systems rewrote their schedulers to be aware of SMT and performance has significantly increased. In the vast majority of workloads, SMT is beneficial. However, it works by sharing the resources of one physical CPU core between two logical CPUs. Those two logical CPUs share resources and the idea is that whenever one thread or another is briefly idle the other can take advantage of the CPU resources. However, in some instances, ex: databases, threads stay busy resulting in competition and a degradation of performance. [Oracle is an example of this](https://docs.oracle.com/cd/E95618_01/html/sbc_scz810_installation/GUID-F2C27A7A-D173-4655-99C5-D1E367DDF2A8.htm). If you think you may be in this scenario it is worth benchmarking with and without SMT to see which performs better.
 
 ### IOMMU Support
 
@@ -193,7 +190,25 @@ The IOMMU is required to support Direct Memory Access (DMA). Unless you have a u
 
 This is there to protect against [DMA Attacks](https://en.wikipedia.org/wiki/DMA_attack). Originally, PCIe devices were entirely external and usually required a reboot to enable. However, in modern computers you often have things like Thunderbolt. An attacker can plug in a Thunderbolt device and then use DMA to read arbitrary memory. [Kernel DMA Protection](https://learn.microsoft.com/en-us/windows/security/information-protection/kernel-dma-protection-for-thunderbolt) protects against this by rejecting any devices which don't support memory access protection. This is done by the IOMMU and it effectively forces the device to honor memory access protection in order to function. With memory access protection the device is only allowed to access its own memory space.
 
-### L1 Stream HW Prefetcher
+### Prefetching
+
+There are two prefetch settings you can control L1 and L2. The merits of prefetching or not prefetching are a deep and complicated subject. [This paper](https://faculty.cc.gatech.edu/~hyesoon/lee_taco12.pdf) does a good job of getting into the weeds on when it is worth it and when it isn't. In general, whether prefetching is valuable is extremely workload dependent. Well optimized workloads will be compiled with prefetch instructions specific to it.
+
+In general, there are two types of prefetching - hardware and software. [This book](http://www.nic.uoregon.edu/~khuck/ts/acumem-report/manual_html/ch_intro_prefetch.html) has a good deep dive and there is also a [Wikipedia Article](https://en.wikipedia.org/wiki/Cache_prefetching#Hardware_vs._software_cache_prefetching).
+
+**Software Prefetching**
+
+Software prefetching is when the programmer or compiler adds instructions to the program. These instructions then load the cache line into cache, but will not stall the thread while waiting for it to load. In this way, the programmer directly controls what is and isn't prefetched. The goal is to prefetch the data long enough before its usage such that it is available at the time of execution, but not so longe before that the data is evicted and then must be reloaded. An intuitive example of where this is helpful is in loops where the compiler can see that something will imminently be loaded.
+
+**Hardware Prefetching**
+
+Hardware prefetches are, as the name implies, implemented in hardware. There are many different [types of hardware prefetching](https://en.wikipedia.org/wiki/Cache_prefetching#Methods_of_hardware_prefetching).
+
+- Stream buffer: If there is a cache miss, fetch the missed block *and* several of the surrounding blocks under the assumption that data you want is typically close together in memory.
+- Strided prefetching: Watch for patterns in memory accesses and fetch based on those patterns. Ex: If A is fetched, immediately followed by B, starting prefetching B with A.
+- Temporal prefetching: Watch for memory access patterns over time
+
+#### L1 Stream HW Prefetcher
 
 https://www.reddit.com/r/Amd/comments/7hhj0s/l1l2_stream_hw_prefetcher/
 
@@ -201,7 +216,7 @@ https://www.reddit.com/r/Amd/comments/7hhj0s/l1l2_stream_hw_prefetcher/
 
 https://ieeexplore.ieee.org/abstract/document/134547
 
-### L2 Stream HW Prefetcher
+#### L2 Stream HW Prefetcher
 
 https://stackoverflow.com/questions/60027056/is-l2-hw-prefetcher-really-helpful
 
@@ -231,8 +246,8 @@ TODO
 
 ### Number of CCDs per Processor
 
-When wouldn't I want this to be maxed?
+TODO - When wouldn't I want this to be maxed?
 
 ### Number of Cores per CCD
 
-When wouldn't I want this to be maxed?
+TODO - When wouldn't I want this to be maxed?
