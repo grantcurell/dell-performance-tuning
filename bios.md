@@ -29,8 +29,7 @@
     - [IOMMU Support](#iommu-support)
     - [Kernel DMA Protection](#kernel-dma-protection)
     - [Prefetching](#prefetching)
-      - [L1 Stream HW Prefetcher](#l1-stream-hw-prefetcher)
-      - [L2 Stream HW Prefetcher](#l2-stream-hw-prefetcher)
+      - [Understanding Prefetching Performance Implications](#understanding-prefetching-performance-implications)
     - [MADT Core Enumeration](#madt-core-enumeration)
     - [NUMA Nodes Per Socket](#numa-nodes-per-socket)
     - [Minimum SEV non-ES ASID](#minimum-sev-non-es-asid)
@@ -208,17 +207,20 @@ Hardware prefetches are, as the name implies, implemented in hardware. There are
 - Strided prefetching: Watch for patterns in memory accesses and fetch based on those patterns. Ex: If A is fetched, immediately followed by B, starting prefetching B with A.
 - Temporal prefetching: Watch for memory access patterns over time
 
-#### L1 Stream HW Prefetcher
+#### Understanding Prefetching Performance Implications
 
-https://www.reddit.com/r/Amd/comments/7hhj0s/l1l2_stream_hw_prefetcher/
+I found [page 2 of this study to be particularly helpful](https://faculty.cc.gatech.edu/~hyesoon/lee_taco12.pdf#page=2). The graph is a bit confusing at first but it illustrates testing different workloads with and without hardware prefetch enabled. Here are some notes on how to interpret it:
 
-> Suppose you were working on a big data set that you processed in a repeatable (and detectable) pattern, the CPU would identify that access pattern as a 'stream' of accesses and start speculatively bringing that data into the L1 (high confidence) or L2 (lower confidence) caches. I'm not sure if there is any information on Ryzen's prefetcher, but you can easily find plenty of papers on the topic. Jouppi's stream buffer paper from 1990 is a good place to start and should be fairly readable if you are from a CS/ECE background.
+- SW refers to software prefetch but only in the context of a programmer manually interceding and creating prefetch rules specific to the workload
+- Base also refers to software prefetch but only the default compiler optimizations (the study used `icc` compiler)
+- GHB is an acornym for Global History Buffer
+- The right axis only applies to the black tickmark
+- The black tickmark describes the ratio of the best performing combination of SW, SW+GHB, SW+STR vs the best performing hardware prefetch scheme **alone** or compiler optimizations only.
+- Positive means that the performance of SW/SW+GHB/SW+STR outperformed base/GHB/STR by the ratio indicate on the right axis. Neutral means it was a tie. Negative means that SW/SW+GHB/SW+STR was worse than base/GHB/STR.
 
-https://ieeexplore.ieee.org/abstract/document/134547
+[Section 3](https://faculty.cc.gatech.edu/~hyesoon/lee_taco12.pdf#page=5) of the paper discusses the positive and negative impacts of prefetching. It is worth exploring these to get some notion of how your workload may perform. However, nothing beats benchmarking.
 
-#### L2 Stream HW Prefetcher
-
-https://stackoverflow.com/questions/60027056/is-l2-hw-prefetcher-really-helpful
+From an options perspective, you can both enable and disable L1 and L2 prefetching. The options simply let you turn hardware caching at both levels on and off.
 
 ### MADT Core Enumeration
 
